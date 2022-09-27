@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/mads
+mads.so
+mads.dylib
+mads.dll
+mads.a
+mads.lib
+mads-test-*
+*.exe
+*.o
+*.obj
+*.lst

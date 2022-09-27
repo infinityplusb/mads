@@ -1,0 +1,14 @@
+{
+	"authors": [
+		"brian"
+	],
+	"copyright": "Copyright © 2022, brian",
+	"dependencies": {
+		"dstats": "~>1.0.6",
+		"scid": "~>0.3.2"
+	},
+	"description": "A minimal D application.",
+	"license": "proprietary",
+	"name": "mads",
+	"targetType": "library"
+}
