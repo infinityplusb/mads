@@ -13,3 +13,4 @@ mads-test-*
 *.o
 *.obj
 *.lst
+libmads.a
