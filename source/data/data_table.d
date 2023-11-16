@@ -1,7 +1,7 @@
-module mads.data.data_table;
+module data_table;
 
-import mads.data.data_object;
-import mads.data.data_manager;
+import data_object;
+import data_manager;
 
 class DataTable
 {

@@ -1,6 +1,6 @@
-module mads.io;
+module io;
 
 public
 {
-    import mads.io.csv;
+    import csv;
 }

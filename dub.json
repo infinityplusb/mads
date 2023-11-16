@@ -13,5 +13,5 @@
 	"description": "A minimal D application.",
 	"license": "proprietary",
 	"name": "mads",
-	"targetType": "library"
+	"targetType": "executable"
 }

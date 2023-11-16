@@ -1,8 +1,8 @@
-module mads.data;
+module data;
 
 public
 {
-    import mads.data.data_manager;
-    import mads.data.data_table;
-    import mads.data.data_object;
+    import data_manager;
+    import data_table;
+    import data_object;
 }

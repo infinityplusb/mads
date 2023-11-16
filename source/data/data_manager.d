@@ -1,6 +1,6 @@
-module mads.data.data_manager;
+module data_manager;
 
-import mads.data.data_object;
+import data_object;
 
 class DataManager
 {

@@ -1,4 +1,4 @@
-module mads.data.data_object;
+module data_object;
 
 class DataObject
 {
