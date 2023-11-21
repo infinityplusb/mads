@@ -13,70 +13,90 @@ auto rnd = Random();
 class neuron
 {
     UUID neuron_id;
-    double weight;
+    double[] weight; // every node has an array of weights of connecting into it
     double bias;
     double in_value;
     double out_value;
+    neuron[] in_neuron;
+    neuron[] out_neuron;
 
     this()
     {
         this.neuron_id = UUID.init;
-        this.weight = uniform(-1.0, 1.0, rnd);
         this.bias = uniform(-1.0, 1.0, rnd);
         this.in_value = 0.0;
     }
-}
 
-class layer
-{
-    neuron[] neurons;
-
-    this(uint layerSize)
+    this(ref Layer layer, int numberOfNeurons)
     {
-        foreach(node; neurons)
+        foreach(node; 0 .. numberOfNeurons)
         {
-            node = new neuron();
+            writeln("Creating neuron");
+            auto new_neuron = new neuron();
         }
     }
 }
 
-class nnet
+class Layer
 {
-    uint[] layerSizes;
-    layer[] layers;
-//    neuron[][] fullNeuralNet;
-    double[][] weights;
-    double[][] values;
+    int layerNumber;
+    neuron[] neurons;
+
+    /***
+        * Create a layer of neurons
+        * @param layerSize
+        Creates the neurons and assigns a random weight to each neuron
+    */
+    this(ref NeuralNet nnet, uint layerSize)
+    {
+        writeln("Creating layer of size ", layerSize);
+        layerNumber = to!int(nnet.layers.length);
+
+        foreach(node; 0 .. layerSize)
+        {
+            auto _neuron = new neuron();
+            if(layerNumber == 0)
+            {
+                writeln("First Layer. Not assigning weights");
+            }
+            else
+            {
+                foreach(prev_layer_node; nnet.layers[layerNumber-1].neurons)
+                {
+                    _neuron.weight ~= uniform(0.0, 1.0, rnd);
+                }
+            }
+            neurons ~= _neuron;
+        }    
+    }
+}
+
+class NeuralNet
+{
+    /* structure */    
+    int[int] layerSizes;
+    Layer[] layers;
+
+    /* training parameters */
+    int epochs;
+    double learningRate;
+
+    /* node values */
+    /* static */
     double[] input_vals;
     double[] target_vals;
+
+    /* dynamic */
+    // double[] input_weights;
+    neuron[] output_nodes;
+    //double[] output_weights;
     double error;
 
-    // double[] input_vals;
-    // double[] output_vals;
-
-    auto rnd = Random();
-    ulong input_dim = 0;
-    ulong output_dim = 0;
-
-    float eta = 0.15;
-
-    this(CSV inData, double[] targetColumn)
+    this(int _numberOfEpochs, double _learningRate)
     {
         writeln("Neural Network created");
-        double[] _weights;
-
-        output_dim = targetColumn.length;
-        this.target_vals = targetColumn;
-        writeln(targetColumn);
-        
-        // read in the data
-        // run a forward pass and get the error
-        foreach(thing;inData.data) //store the input vector
-        {
-            input_vals ~= thing;
-            _weights ~= uniform(0.0, 1.0, rnd);
-        }
-        this.weights ~= _weights;
+        epochs = _numberOfEpochs;
+        learningRate = _learningRate;
     }
 
     /***
@@ -87,164 +107,13 @@ class nnet
     void addLayer(int numberOfNeurons)
     {
         writefln("Adding layer of size %d ...", numberOfNeurons);
-        this.layerSizes ~= numberOfNeurons;
-        double[] layerWeights;
-        layerWeights.length = numberOfNeurons;
-//        foreach(weight; layerWeights)
-        for(int i = 0; i < numberOfNeurons; i++)
-        {
-            layerWeights[i] = uniform(0.0, 1.0, rnd);
-            write(layerWeights[i], " ");
-        }
-        layerWeights ~= uniform(0.0, 1.0, rnd); // create a bias term
-        this.weights ~= layerWeights;
+        layerSizes[layerSizes.sizeof] = numberOfNeurons;
+        auto newLayer = new Layer(this, numberOfNeurons);
+        layers ~= newLayer;
+
+        writeln(layers.length);
+        writeln(layers[0].neurons.length);
         writeln();
-    }
-
-    void train(int epochs, double learningRate)
-    {
-        writeln("Training...");
-        int _epochs = 0;
-        double[] output_vals = propogateForward(input_vals);
-        error = calculateError(output_vals, target_vals);
-        // for each epoch run a backward pass and a forward pass
-
-        writeln("Error: ", error);
-        do
-        {
-            _epochs++;
-            writeln("\nEpoch: ", _epochs, " out of ", epochs );
-            propogateBackward(output_vals, learningRate);
-            output_vals = propogateForward(input_vals);
-        
-            error = calculateError(output_vals, target_vals);
-            writeln("Error: ", error);
-        }
-        while(/*error > 0.01 && */_epochs < epochs);
-    }
-
-    double[] propogateForward(ref double[] input_vals)
-    {
-        writeln("Propogating forward");
-        double[] output_vals;
-
-        int layer_counter = 0;
-        foreach(layer; layerSizes)
-        {
-            // writeln("Layer Counter: ", layer_counter);
-            // writeln("Layer: ", layer);
-            // writeln("Input size: ", input_vals.length);
-            // writeln("Weights size: ", weights[layer_counter].length);
-            // writeln("Output dim: ", layerSizes[layer_counter]);
-            output_vals.length = layerSizes[layer_counter];
-
-            // foreach output node
-            for(int _out = 0; _out < output_vals.length; _out++)
-            {
-                // writeln("_out: ", _out);
-                // writeln("Inputs: ", weights[layer_counter].length);
-                
-                double sum = 0.0;
-                // foreach weight and input node feeding into the output node
-                for(int w = 0; w < weights[layer_counter].length; w++)
-                {
-
-                    // writeln("w: ", w );
-                    // writeln("Weight: ", weights[layer_counter][w]);
-//                    writeln("Input: ", input_vals[w]);
-                    sum += weights[layer_counter][w] * input_vals[w];
-//                    writeln("Sum: ", sum);
-                }
-                sum += weights[layer_counter][input_dim]; //account for the bias
-//                writeln("Final Sum: ", sum);
-                output_vals[_out] = sum; //sigmoid(sum);
-//                writeln("Output: ", output_vals[_out]);
-//                writeln();
-            }
-
-            input_vals = output_vals;
-            layer_counter++;
-        }
-
-        // writeln("\nLast layer");
-        // writeln("Input size: ", input_vals.length);
-        // writeln("Output dim: ", target_vals.length);
-        output_vals.length = target_vals.length;
-
-        //perform matrix multiplication
-        for(int _out = 0; _out < output_vals.length; _out++)
-        {
-            double sum = 0.0;
-            for(int w = 0; w < input_dim; w++)
-            {
-                sum += input_vals[w];
-            }
-            output_vals[_out] = sum; //sigmoid(sum);
-        }
-
-        input_vals = output_vals;
-        layer_counter++;
-
-
-        return output_vals;
-    }
-
-    double[] propogateBackward(ref double[] in_vals, double learningRate)
-    {
-        writeln("Propogating backward");
-        double[] prev_layer_grad;
-        double[] errors ;
-        int counter = 0;
-
-        foreach(node; in_vals)
-        {
-            errors ~= node - target_vals[counter];
-            // writeln("Node: ", node);
-            // writeln(-(target_vals[counter] - node));
-            // writeln(node*(1-node));
-            counter++;
-        }
-
-        writeln(layerSizes.length);
-        // // iterate through the layers backwards
-        for(auto i = layerSizes.length; i > 0; i--)
-        {
-            writeln("Layer: ", i);
-            if(i == layerSizes.length)
-            {
-                foreach(weight; weights[i])
-                {
-                    writeln("Weight: ", weight);
-                    // change in weight wrt error 
-                    // dErrorTotal/dWeight = dErrorTotal/dOutput * dOutput/dNet * dNet/dWeight
-
-                    // dErrorTotal/dOutput
-                    // -(target-out)
-//                    in_vals[i] - target_vals[i];
-
-                    // dOutput/dNet
-                    // out(1-out)
-//                    target_vals[i] * (1.0 - target_vals[i]);                    
-
-                    // dNet/dWeight
-                    // node
-
-                }
-            }
-            // prepare the output layer (going backwards)
-            // prev_layer_grad.length = layers[i];
-            // // iterate through the nodes of the layer and calculate the new weight
-            // // W(n+1)=W(n)+η[d(n)-Y(n)]X(n);
-            // for(int _out = 0; _out < output_vals.size(); _out++)
-            // {
-            //     prev_layer_grad[_out] = learningRate * error[_out] ;
-            //     // output_vals[_out] * (1.0 - output_vals[_out]);
-            // }
-
-        }
-
-        //return computed partial derivatives to be passed to preceding layer
-        return prev_layer_grad;
     }
 
     double sigmoid(double x)
@@ -252,21 +121,429 @@ class nnet
         return 1.0 / (1.0 + exp(-x));
     }
 
-    double calculateError(ref double[] output_vals, ref double[] target_vals)
+    double calculateError(ref neuron[] _output_vals, ref double[] _target_vals)
     {
+        // writeln("Calculating error");
         double error = 0.0;
-        for(int i = 0; i < output_vals.length; i++)
+        for(int i = 0; i < _output_vals.length; i++)
         {
-            error += 0.5 * (output_vals[i] - target_vals[i]) * (output_vals[i] - target_vals[i]);
+            debug(Errors)
+            {
+                writeln("Output: ", _output_vals[i].out_value);
+                writeln("Target: ", _target_vals[i]);
+            }
+            error += 0.5 * pow((_output_vals[i].out_value - _target_vals[i]) * (_output_vals[i].out_value - _target_vals[i]),2);
         }
         return error;
     }
 
-    unittest
+    /***
+        * Train the network
+        * @param inData
+        * @param targetColumn
+    */
+    void train(CSV inData, double[] targetColumn)
     {
+        writeln("Loading data...");
+        foreach(counter, thing;inData.data) //store the input vector
+        {
+            input_vals ~= thing[0] * 0.1;
+            input_vals ~= thing[3] * 0.1;
+        }
+        writefln("Loaded %d records", input_vals.length);
+
+        this.target_vals = targetColumn;
+//        output_nodes.length = target_vals.length;
+        
+        writeln(target_vals.length);
+
+        // setup the weights for the first set of nodes
+        writeln("Setting up weights for first set of nodes ...");
+        foreach(node; layers[0].neurons)
+        {
+            foreach(inputVal; input_vals)
+            {
+                node.weight ~= uniform(0.0, 1.0, rnd);
+            }
+        }
+
+        // setup the weights for the last set of nodes
+        writeln("Setting up weights for last set of nodes ...");
+        foreach(output; target_vals)
+        {
+            auto node = new neuron();
+            // writeln(node);
+            foreach(prev_layer_node; layers[layers.length-1].neurons)
+            {
+                node.weight ~= uniform(0.0, 1.0, rnd);
+            }
+            output_nodes ~= node; 
+        }
+
+        writeln("Training...");
+        propogateForward();
+        int _epochs = 0;
+
+        auto _error = 0.0;
+        do
+        {
+            _error = error;
+            propogateBackward();
+            propogateForward();
+            writefln("At epoch %s, error is %s", to!string(_epochs), to!string(error));
+
+            _epochs++;
+        }
+        while(error > 0.001 && _epochs < epochs && abs(error - _error) > 0.001);
+        saveNetwork("data/nn.json");
     }
 
-    void test(){};
-    void save(){};
-    void load(){};    
+    void propogateForward()
+    {
+        // writefln("Error is %s", to!string(error));
+        writeln("\nPropogating forward");
+        // print_weights();
+        foreach(counter1, layer; layers)
+        {
+//            writeln("Layer: ", layer.layerNumber);
+            // writeln("Neurons: ", layer.neurons.length);
+            foreach(counter2, neuron; layer.neurons)
+            {
+//                writeln("Neuron: ", counter2);
+                double sum = 0.0;
+                int counter = 0;
+                if(layer.layerNumber == 0)
+                {
+                    // int counter = 0;
+                    foreach(input; input_vals)
+                    {
+                        // write("Input: ", input);
+                        // write("\tWeight: ", neuron.weight[counter]);
+                        // writeln("\tsum: ", input * neuron.weight[counter]);
+                        sum += input * neuron.weight[counter];                        // TODO is this always > 1
+                        counter++;
+                    }
+                }
+                else
+                {
+                    foreach(prev_layer_node; layers[layer.layerNumber-1].neurons)
+                    {
+                        // write("Input (prev): ", prev_layer_node.out_value);
+                        // writeln("\tWeight: ", neuron.weight[counter]);
+                        sum += prev_layer_node.out_value * neuron.weight[counter];
+                        counter++;
+                    }
+                }
+                neuron.in_value = sum;
+                debug (ForwardPropagation)
+                {
+                    writeln("Sum: ", sum);
+                    writeln("Average: ", sum/counter);
+                    writeln("Bias: ", neuron.bias);
+                    writeln("Updating the values");
+                    writeln(layers[counter1].layerNumber);
+                    writeln(layers[counter1].neurons[counter2].out_value);
+                    writeln(sigmoid(sum +  neuron.bias));
+                }
+                // neuron.out_value = sigmoid(sum +  neuron.bias);
+                layers[counter1].neurons[counter2].out_value = sigmoid(sum +  neuron.bias); 
+                debug (ForwardPropagation) writeln("After update: ", layers[counter1].neurons[counter2].out_value);
+                // layers[counter1].neuron[counter2].out_value = sigmoid(sum) * neuron.bias;
+                // .out_value = sigmoid(sum) * neuron.bias;
+//                neuron.out_value = sum *  neuron.bias;
+                // writeln("Output: ", neuron.out_value);
+            }
+        };
+
+        // do the last layer
+//        writeln("\nLast layer");
+//        writeln(output_nodes.length);
+        for(int i = 0; i< output_nodes.length; i++) // output_node; output_nodes)
+        {
+            double _sum = 0.0;
+            foreach(counter, prev_layer_node; layers[layers.length-1].neurons)
+            {
+                // writeln(prev_layer_node.out_value, "\t*\t", output_nodes[i].weight[counter]);
+                _sum += prev_layer_node.out_value * output_nodes[i].weight[counter];
+            }
+            auto sum = sigmoid(_sum + output_nodes[i].bias);
+            debug(ForwardPropogation)
+            {
+                writeln(sum);
+                writeln("i: ", i);
+                writeln("Last Layer Output: ", sum);
+                writeln("Target: ", target_vals[i]);
+                writeln("Error: ", sum - target_vals[i]);
+            }
+            output_nodes[i].out_value = sum;
+        }
+        // writeln(output_vals);
+        error = calculateError(output_nodes, target_vals);
+        // print();
+        // print_weights();
+
+    }
+
+    void propogateBackward()
+    {
+        writeln("\nPropogating backward");
+
+        // print();
+        // print_weights();
+        // calculate the error for the output layer
+        double[] error;
+        // writeln("\nTotal Error: ", error);
+        double[] output_layer_updates;
+        // writeln("Calculate the gradient of the first layer");
+        foreach(counter, node; output_nodes)
+        {
+            error ~= node.out_value - target_vals[counter];
+            // writeln("Calc'd Value: ", node.out_value);
+            // writeln("Target Value: ", target_vals[counter]);
+            auto dErrorTotal_dOutput = node.out_value - target_vals[counter];
+            auto dOutput_dNet = node.out_value * (1.0 - node.out_value);
+            // writeln("Total/Output: ", dErrorTotal_dOutput);
+            // writeln("Output/Net: ", dOutput_dNet);
+
+            // target_vals[i] * (1.0 - target_vals[i]);
+            foreach(counter2, weight; node.weight)
+            {
+                // change in weight wrt error 
+                // dErrorTotal/dWeight = dErrorTotal/dOutput * dOutput/dNet * dNet/dWeight
+
+                // dErrorTotal/dOutput
+                // -(target-out)
+                // see above
+
+                // dOutput/dNet
+                // out(1-out)
+                // see above
+
+                // dNet/dWeight
+                // node
+                // TODO is this right, or should this be the output value of the previous node?
+                auto dNet_dWeight = layers[layers.length-1].neurons[counter2].out_value; 
+                // writeln("\nCounter2: ", counter2);
+                // writeln("Total/Output: ", dErrorTotal_dOutput);
+                // writeln("Output/Net: ", dOutput_dNet);
+                // writeln("Net/Weight: ", dNet_dWeight);
+                auto dErrorTotal_dWeight = dErrorTotal_dOutput * dOutput_dNet * dNet_dWeight;
+                // writeln("Total/Weight:" , dErrorTotal_dWeight);
+                // writeln("Old Weight: ", weight);
+                // writeln("Calc: ", weight, " - (", learningRate, " * ", dErrorTotal_dWeight, ")");
+                // output_layer_updates ~= weight - (learningRate * dErrorTotal_dWeight);
+                node.weight[counter2] = weight - (learningRate * dErrorTotal_dWeight);
+                // writeln("\tNew Weight: ", node.weight[counter2], "\n");
+
+                //     double deriviate = (1 - pow(node.out_value, 2));
+                //     outer_layer_error ~= deriviate * (target_vals[counter] - node.out_value);
+            }
+        }
+        // print();
+        // print_weights();
+
+        // writeln("Errors: ", error);
+
+        // iterate through the layers backwards
+        for(auto i = layers.length; i > 0; i--)
+        {
+            // change in weight wrt error 
+
+            // dErrorTotal/dWeight = dErrorTotal/dHidden * dHidden/dNet * dNet/dWeight
+            // dErrorTotal/dWeight = sum_over_all_next_nodes(dNextNode_i/dHidden) * dHidden/dNet * dNet/dWeight
+            // dErrorTotal/dWeight = sum_over_all_next_nodes(dNextNode_i/dNN_Input_i * dNN_Input_i/dHidden) * dHidden/dNet * dNet/dWeight
+
+            // dNextNode_i/dNN_Input_i
+            // -(target[n+1]-out[n+1])
+            double sum_over_all_next_nodes = 0.0;
+            double dNN_Input_i_dHidden;
+            double dNextNode_i_dNN_Input_i;
+
+            // writeln(layers.length);
+            // Calculate the weights for the last hidden layer
+            if(layers[i-1].layerNumber == layers.length - 1)
+            {
+                // writeln("Last hidden layer");
+                foreach(counter, downStreamNode ; layers[i-1].neurons)
+                {
+                    dNN_Input_i_dHidden = downStreamNode.out_value * (1.0 - downStreamNode.out_value);
+                    dNextNode_i_dNN_Input_i = downStreamNode.out_value - target_vals[counter];
+                    sum_over_all_next_nodes += dNextNode_i_dNN_Input_i * dNN_Input_i_dHidden;
+                    // writeln("Partial Sum: ", sum_over_all_next_nodes);
+                }
+            }
+            // Calculate the weights for the first hidden layer
+            else if(layers[i-1].layerNumber == 0)
+            {
+                // writeln("First hidden layer");
+                foreach(counter, downStreamNode ; layers[i-1].neurons)
+                {
+                    // writeln("Counter: ", counter);
+                    // writeln("Downstream Node: ", downStreamNode.out_value);
+                    dNN_Input_i_dHidden = downStreamNode.out_value * (1.0 - downStreamNode.out_value);
+                    dNextNode_i_dNN_Input_i = downStreamNode.out_value - target_vals[counter];
+                    // writeln("dNN_Input_i_dHidden: ", dNN_Input_i_dHidden);
+                    // writeln("dNextNode_i_dNN_Input_i: ", dNextNode_i_dNN_Input_i);
+                    // writeln("Partial Sum: ", dNextNode_i_dNN_Input_i * dNN_Input_i_dHidden);
+                    sum_over_all_next_nodes += dNextNode_i_dNN_Input_i * dNN_Input_i_dHidden;
+                }
+            }
+            // Calculate the weights for the inner hidden layers
+            else
+            {
+                // writeln("Inner hidden layer");
+                foreach(counter, downStreamNode ; layers[i-1].neurons)
+                {
+                    // writeln("Counter: ", counter);
+                    // writeln("Downstream Node: ", downStreamNode.out_value);
+                    dNN_Input_i_dHidden = downStreamNode.out_value * (1.0 - downStreamNode.out_value);
+                    dNextNode_i_dNN_Input_i = downStreamNode.out_value - target_vals[counter];
+                    // writeln("dNN_Input_i_dHidden: ", dNN_Input_i_dHidden);
+                    // writeln("dNextNode_i_dNN_Input_i: ", dNextNode_i_dNN_Input_i);
+
+                    sum_over_all_next_nodes += dNextNode_i_dNN_Input_i * dNN_Input_i_dHidden;
+                }
+            }
+
+            // writeln("Sum: ", sum_over_all_next_nodes);
+
+            foreach(node; layers[i-1].neurons)
+            {
+                // dHidden/dNet
+                // out(1-out)
+                // writeln("Node: ", node.out_value);
+                double dHidden_dNet = node.out_value * (1.0 - node.out_value);
+
+                // dNet/dWeight
+                // node
+                foreach(prev_layer_counter, weight; node.weight)
+                {
+                    // dErrorTotal/dWeight
+                    double dErrorTotal_dWeight;
+                    double dNet_dWeight;
+                    // if it's the first layer
+                    if(layers[i-1].layerNumber == 0)
+                    {
+                        dNet_dWeight = input_vals[prev_layer_counter];
+                    }
+                    // if it's not the first layer
+                    else 
+                    {
+                        dNet_dWeight = layers[i-2].neurons[prev_layer_counter].out_value;
+                    }
+                    dErrorTotal_dWeight = sum_over_all_next_nodes * dHidden_dNet * dNet_dWeight;
+
+                    // writeln("\nOld Weight: ", weight);
+                    // writeln("Other Old Weight: ", node.weight[prev_layer_counter]);
+                    // writeln("sum_over_all_next_nodes: ", sum_over_all_next_nodes);
+                    // writeln("dHidden_dNet: ", dHidden_dNet);
+                    // writeln("dNet_dWeight: ", dNet_dWeight);
+                    // writeln("dErrorTotal_dWeight: ", dErrorTotal_dWeight);
+                    
+                    if(layers[i-1].layerNumber == 0)
+                    {
+                        // write("\tChanging the Weight of Layer 0");
+                        node.weight[prev_layer_counter] = weight - (learningRate * dErrorTotal_dWeight);
+
+                    }
+                    else
+                    {
+                        // writeln("Changing the Weight");
+                        node.weight[prev_layer_counter] = weight - (learningRate * dErrorTotal_dWeight);
+                    }
+                    // writeln("\tNew Weight: ", weight - (learningRate * dErrorTotal_dWeight));
+                }
+            }
+            // print();
+            // print_weights();
+            
+            // double[] output_layer_updates;
+        }
+
+        // foreach(counter1, node; output_nodes)
+        // {
+        //     foreach(counter2, weight; node.weight)
+        //     {
+        //         auto m = (counter2 * counter1);
+        //         node.weight[counter2] = output_layer_updates[counter2 * counter1];
+        //         writeln("Updating weight ", counter2 % m + fmod(counter1,m), " to ", output_layer_updates[counter2 * counter1]);
+        //     }
+        // }
+
+// create a formula for a=1 to 7 and b=1 to 5 with a single index
+
+
+// counter1 = 0 .. 6
+// counter2 = 0 .. 4
+
+// ((counter2*10)-7)+ counter1
+
+// 0 .. 35
+
+// 00 01 02 03 04 05 06
+// 10 11 12 13 14 15 16
+// 20 21 22 23 24 25 26
+// 30 31 32 33 34 35 36
+// 40 41 42 43 44 45 46
+
+
+
+
+
+
+        // writeln("After propogating backward");
+        // print();
+        // print_weights();
+    }
+
+    void print()
+    {
+        foreach(_layer; layers)
+        {
+            writeln("Layer: ", _layer.layerNumber);
+            foreach(_neuron; _layer.neurons)
+            {
+                writeln(_neuron.out_value);
+            }
+        }
+    }
+    void print_weights()
+    {
+        foreach(_layer; layers)
+        {
+            if(_layer.layerNumber == 0) 
+                continue;
+            writeln("Layer: ", _layer.layerNumber);
+            foreach(_neuron; _layer.neurons)
+            {
+                writeln(_neuron.weight);
+            }
+        }
+    }
+
+    void saveNetwork(string filename)
+    {
+        writeln("Saving network to ", filename);
+        auto file = File(filename, "w");
+        foreach(_layer; layers)
+        {
+            // writeln("Skipping Layer 0");
+            // if(_layer.layerNumber == 0) 
+            //     continue;
+            writeln("\nLayer: ", _layer.layerNumber);
+            file.writeln("\nLayer: ", _layer.layerNumber);
+            foreach(_neuron; _layer.neurons)
+            {
+                file.write(_neuron.weight, ", ");
+            }
+        }
+        writeln("\nLayer: ", layers.length);
+        file.writeln("\nLayer: ", layers.length);
+
+        foreach(_neuron; output_nodes)
+        {
+            file.write(_neuron.weight, ", \n");
+        }        // file.writeln(to!string(this));
+        file.close();
+    }
 }

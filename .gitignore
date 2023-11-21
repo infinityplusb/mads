@@ -6,7 +6,7 @@ docs/
 mads.so
 mads.dylib
 mads.dll
-mads.a
+ml.ads.a
 mads.lib
 mads-test-*
 *.exe
@@ -14,3 +14,5 @@ mads-test-*
 *.obj
 *.lst
 libmads.a
+data/nn.json
+log.txt
