@@ -31,7 +31,7 @@ class neuron
     {
         foreach(node; 0 .. numberOfNeurons)
         {
-            writeln("Creating neuron");
+            // writeln("Creating neuron");
             auto new_neuron = new neuron();
         }
     }
@@ -47,7 +47,7 @@ class Layer
         * @param layerSize
         Creates the neurons and assigns a random weight to each neuron
     */
-    this(ref NeuralNet nnet, uint layerSize)
+    this(NeuralNet nnet, uint layerSize)
     {
         writeln("Creating layer of size ", layerSize);
         layerNumber = to!int(nnet.layers.length);
@@ -57,7 +57,7 @@ class Layer
             auto _neuron = new neuron();
             if(layerNumber == 0)
             {
-                writeln("First Layer. Not assigning weights");
+                //writeln("First Layer. Not assigning weights");
             }
             else
             {
@@ -106,14 +106,10 @@ class NeuralNet
     */
     void addLayer(int numberOfNeurons)
     {
-        writefln("Adding layer of size %d ...", numberOfNeurons);
+        // writefln("Adding layer of size %d ...", numberOfNeurons);
         layerSizes[layerSizes.sizeof] = numberOfNeurons;
-        auto newLayer = new Layer(this, numberOfNeurons);
+        auto newLayer = new Layer(this, cast(uint)numberOfNeurons);
         layers ~= newLayer;
-
-        writeln(layers.length);
-        writeln(layers[0].neurons.length);
-        writeln();
     }
 
     double sigmoid(double x)
@@ -190,18 +186,22 @@ class NeuralNet
             _error = error;
             propogateBackward();
             propogateForward();
-            writefln("At epoch %s, error is %s", to!string(_epochs), to!string(error));
+            if(_epochs % 100 == 0)
+            {
+                writefln("At epoch %s, error is %s", to!string(_epochs), to!string(error));
+            }
 
             _epochs++;
         }
         while(error > 0.001 && _epochs < epochs && abs(error - _error) > 0.001);
-        saveNetwork("data/nn.json");
+        writefln("Finished after %s epochs. Final error %s", to!string(_epochs), to!string(error));
+        // saveNetwork("data/nn.json");
     }
 
     void propogateForward()
     {
         // writefln("Error is %s", to!string(error));
-        writeln("\nPropogating forward");
+        // writeln("\nPropogating forward");
         // print_weights();
         foreach(counter1, layer; layers)
         {
@@ -253,7 +253,7 @@ class NeuralNet
 //                neuron.out_value = sum *  neuron.bias;
                 // writeln("Output: ", neuron.out_value);
             }
-        };
+        }
 
         // do the last layer
 //        writeln("\nLast layer");
@@ -286,7 +286,7 @@ class NeuralNet
 
     void propogateBackward()
     {
-        writeln("\nPropogating backward");
+        // writeln("\nPropogating backward");
 
         // print();
         // print_weights();
@@ -530,14 +530,14 @@ class NeuralNet
             // writeln("Skipping Layer 0");
             // if(_layer.layerNumber == 0) 
             //     continue;
-            writeln("\nLayer: ", _layer.layerNumber);
+            // writeln("\nLayer: ", _layer.layerNumber);
             file.writeln("\nLayer: ", _layer.layerNumber);
             foreach(_neuron; _layer.neurons)
             {
                 file.write(_neuron.weight, ", ");
             }
         }
-        writeln("\nLayer: ", layers.length);
+        // writeln("\nLayer: ", layers.length);
         file.writeln("\nLayer: ", layers.length);
 
         foreach(_neuron; output_nodes)

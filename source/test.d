@@ -5,14 +5,12 @@ import mads;
 
 void main()
 {
-    auto csv1 = new CSV("data/iris_25.data");
-//    data = csv1.data.dup;
+    auto csv1 = new CSV("data/iris.data");
     writefln("Loaded %d records.", csv1.numberOfObs);   
     
     double[] targets;
 
     auto File = File("/home/brian/Documents/Programming/d/viewer/data/iris.data");
-//    auto File = File("data/iris_25.data");
     foreach(line; File.byLine())
     {
         // split the line into an array of strings

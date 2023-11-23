@@ -3,10 +3,6 @@
 		"brian"
 	],
 	"copyright": "Copyright © 2022, brian",
-	"dependencies": {
-		"dstats": "~>1.0.6",
-		"scid": "~>0.3.2"
-	},
 	"sourcePaths": [				
 		"source"
 	],

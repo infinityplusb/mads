@@ -19,7 +19,7 @@ class CSV
 
     this(string infile, bool hasHeader)
     {
-        writeln("Test");
+        // writeln("Test");
         this.data = load(infile);
     }
 
